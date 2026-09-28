@@ -10,10 +10,13 @@ import {
   createProject,
   deleteCard,
   deleteProject,
+  importProducts,
   repositionCard,
   updateCard,
   updateProject,
 } from '@/lib/manage';
+import { getProducts } from '@/lib/ado';
+import { productNameAndPitch } from '@/lib/ado-progress';
 
 export type LoginState = { error: string | null };
 
@@ -182,6 +185,36 @@ export async function updateProjectAction(_prev: FormState, fd: FormData): Promi
     return { error: message(err) };
   }
   refresh(projectId);
+  return { error: null };
+}
+
+/**
+ * Add the ticked tracker products as project rows, named from their epics. The
+ * slugs come from checkboxes; the names and pitches are looked up server-side,
+ * so nothing in the form can name a product the tracker does not have.
+ */
+export async function importProductsAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  try {
+    const wanted = new Set(
+      fd
+        .getAll('slug')
+        .map((v) => String(v).trim())
+        .filter((v) => /^[a-z0-9][a-z0-9-]*$/.test(v))
+    );
+    if (wanted.size === 0) throw new Invalid('Tick at least one product.');
+    const products = await getProducts();
+    const rows = products
+      .filter((p) => wanted.has(p.slug))
+      .map((p) => {
+        const { name, pitch } = productNameAndPitch(p.slug, p.title);
+        return { slug: p.slug, name, description: pitch, sortOrder: p.rank * 10 };
+      });
+    const added = await importProducts(rows);
+    if (added.length === 0) throw new Invalid('Those products are already on the board.');
+  } catch (err) {
+    return { error: message(err) };
+  }
+  refresh();
   return { error: null };
 }
 

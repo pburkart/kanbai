@@ -1,6 +1,8 @@
 import { verifySession } from '@/lib/dal';
 import { getBoardSummaries } from '@/lib/projects';
 import { adoConfigured, getProducts } from '@/lib/ado';
+import { isPublicStage, productNameAndPitch } from '@/lib/ado-progress';
+import { ImportPanel, type ImportCandidate } from './ImportPanel';
 import { logout } from './actions';
 import { ProjectsPanel, type ProjectRow } from './ProjectsPanel';
 
@@ -25,6 +27,13 @@ export default async function ManagePage() {
   }));
 
   const totalCards = projects.reduce((sum, p) => sum + p.cardCount, 0);
+
+  // Tracker products with no project row yet, ready to add in one go.
+  const linked = new Set(boards.map((b) => b.adoSlug).filter(Boolean));
+  const candidates: ImportCandidate[] = trackerProducts
+    .filter((p) => !linked.has(p.slug) && p.stage !== 'Killed')
+    .map((p) => ({ slug: p.slug, ...productNameAndPitch(p.slug, p.title), stage: p.stage, active: isPublicStage(p.stage) }))
+    .sort((a, b) => Number(b.active) - Number(a.active));
 
   return (
     <div className="manage-shell">
@@ -65,6 +74,8 @@ export default async function ManagePage() {
           </span>
         </div>
       </div>
+
+      <ImportPanel candidates={candidates} />
 
       <ProjectsPanel projects={projects} products={trackerProducts.map((p) => ({ slug: p.slug, stage: p.stage }))} />
     </div>

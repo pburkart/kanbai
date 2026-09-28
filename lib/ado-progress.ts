@@ -190,6 +190,25 @@ export function summarize(
   return { progress, recentMilestones, plannedFeatures };
 }
 
+/**
+ * A display name and one-line pitch from a product epic's title. Newer epics are
+ * titled "slug: the pitch"; older ones are just the slug. Either way the name is
+ * the slug in title case ("job-hunt" -> "Job Hunt") unless the title supplies
+ * something better before the colon.
+ */
+export function productNameAndPitch(slug: string, title: string): { name: string; pitch: string | null } {
+  const fromSlug = slug
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  const m = /^([^:]+):\s*(.+)$/.exec(title.trim());
+  if (!m) return { name: fromSlug, pitch: null };
+  const head = m[1].trim();
+  const name = head.toLowerCase() === slug.toLowerCase() ? fromSlug : head;
+  return { name, pitch: m[2].trim() || null };
+}
+
 export function totalOf(p: ProductProgress): number {
   return p.backlog + p.inProgress + p.inReview + p.done;
 }

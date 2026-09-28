@@ -90,6 +90,37 @@ export async function updateProject(id: number, input: ProjectInput): Promise<vo
   );
 }
 
+export type ImportRow = { slug: string; name: string; description: string | null; sortOrder: number };
+
+interface SlugRow extends RowDataPacket {
+  ado_slug: string;
+}
+
+/**
+ * Add a project row per tracker product that is not linked yet. Existing links
+ * are left alone, so this is safe to run again; the Board edits copy, image and
+ * links afterwards. Returns the slugs that were added.
+ */
+export async function importProducts(rows: ImportRow[]): Promise<string[]> {
+  await verifySession();
+  if (rows.length === 0) return [];
+  const [linked] = await pool.query<SlugRow[]>(
+    'SELECT ado_slug FROM projects WHERE ado_slug IS NOT NULL'
+  );
+  const have = new Set(linked.map((r) => r.ado_slug));
+  const added: string[] = [];
+  for (const row of rows) {
+    if (have.has(row.slug)) continue;
+    await pool.query<ResultSetHeader>(
+      'INSERT INTO projects (name, description, image_url, external_url, repo_url, ado_slug, featured, sort_order) VALUES (?, ?, NULL, NULL, NULL, ?, 0, ?)',
+      [row.name, row.description, row.slug, row.sortOrder]
+    );
+    have.add(row.slug);
+    added.push(row.slug);
+  }
+  return added;
+}
+
 export async function deleteProject(id: number): Promise<void> {
   await verifySession();
   if (id === SENTINEL) throw new Error('Cannot delete the system project.');

@@ -1516,3 +1516,17 @@ a.progress-card {
   height: auto;
   min-height: 300px;
 }
+
+/* ---- Manage: import from the tracker ---- */
+.manage-import-row {
+  cursor: pointer;
+  gap: 12px;
+}
+.manage-import-row input {
+  width: auto;
+  flex: 0 0 auto;
+}
+.manage-import-row .manage-row-main {
+  flex: 1 1 auto;
+  text-align: left;
+}

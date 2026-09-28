@@ -6,6 +6,7 @@ import {
   parseRank,
   parseStage,
   parseTags,
+  productNameAndPitch,
   productOf,
   publicTitle,
   stageLabel,
@@ -110,6 +111,23 @@ test('milestones in the tracker vocabulary stay internal, and asides are strippe
   assert.equal(publicTitle('relic-vault - Monetization cycle 1', 'relic-vault'), 'Monetization cycle 1');
   assert.equal(publicTitle('Relic-Vault: streaks', 'relic-vault'), 'streaks');
   assert.equal(publicTitle('Unrelated title', 'relic-vault'), 'Unrelated title');
+});
+
+test('a product gets a name and pitch from its epic title', () => {
+  assert.deepEqual(productNameAndPitch('job-hunt', 'job-hunt'), { name: 'Job Hunt', pitch: null });
+  assert.deepEqual(productNameAndPitch('orchestrata', 'Orchestrata'), { name: 'Orchestrata', pitch: null });
+  assert.deepEqual(productNameAndPitch('beatbranch', 'beatbranch: GitHub for music producers - branches'), {
+    name: 'Beatbranch',
+    pitch: 'GitHub for music producers - branches',
+  });
+  assert.deepEqual(productNameAndPitch('fleetwork', 'Fleetwork: a community for building software'), {
+    name: 'Fleetwork',
+    pitch: 'a community for building software',
+  });
+  assert.deepEqual(productNameAndPitch('par', 'Par, the duel: a 45-second duel'), {
+    name: 'Par, the duel',
+    pitch: 'a 45-second duel',
+  });
 });
 
 test('summarize caps the milestone list', () => {
